@@ -1,0 +1,83 @@
+install sql server edition - https://go.microsoft.com/fwlink/?linkid=866658
+install ssms
+open sms and connect to localhost\SQLEXPRESS with windows authentication
+
+right click on the server -> properties-> security -> select SQL and windows
+
+Create new user in Server -> Security -> Logins -> New Login -> username password
+Give all permissions for the user
+
+
+
+start -> SQL Server management > SQL Network connection -> Enable TCP/IP
+run -> services.msc-> Enable Automatic and restart  - SQL EXPRESS , SQL Server Browser
+
+Test the connection with server.js with custom query  "Select 'test' as name " 
+then create your own table and do CRUD operations
+
+server.js
+const cors = require('cors'); 
+var sql = require("mssql");
+var express = require("express");
+var app = express();
+app.use(cors());
+
+var config = {
+    user: 'admin',
+    password: 'pass@word1',
+    server: 'localhost\\SQLEXPRESS', 
+    database: 'localdb' 
+};
+
+var messages=[{text:'sample',owner:"john"},{text:'sample2',owner:"david"}];
+app.get("/messages",(req,res) => {
+    res.send(messages);
+})
+app.get("/users",(req,res) => {
+    // connect to your database
+    sql.connect(config, function (err) {
+    
+        if (err) console.log(err);
+
+        // create Request object
+        var request = new sql.Request();
+           
+        // query to the database and get the records
+        request.query('select * from [User]', function (err, recordset) {
+            
+            if (err) console.log(err)
+
+            // send records as a response
+            res.send(recordset.json());
+            
+        });
+    });
+})
+
+function getUsers()
+{
+    try{
+    var dbConn = new sql.ConnectionPool(dbConfig);
+    dbConn.connect().then(function () {
+        var request = new sql.Request(dbConn);
+        request.query("select * from [User]").then(function (resp) {
+            return resp.recordset();
+            dbConn.close();
+        }).catch(function (err) {
+            console.log(err);
+            dbConn.close();
+        });
+    }).catch(function (err) {
+
+        console.log(err);
+    });
+}
+catch(error)  {
+    console.log(error.text());
+}
+}
+
+app.listen(8888);
+
+
+
